@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Voting System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            padding-top: 2rem;
+            max-width: 800px;
+        }
+        .results-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .results-card:hover {
+            transform: translateY(-5px);
+        }
+        .candidate-info {
+            padding: 1.5rem;
+            border-left: 5px solid;
+            margin: 1rem;
+            background: #f8f9fa;
+            border-radius: 0 10px 10px 0;
+        }
+        .votes-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-5">Online Voting System</h1>
+        
+        <!-- Voting Form -->
+        <div class="results-card p-4 mb-4">
+            <h2 class="text-center mb-4">Vote for Your Candidate</h2>
+            <form id="candidateForm">
+                <div class="mb-3">
+                    <label for="candidate" class="form-label">Choose a Candidate</label>
+                    <select id="candidate" name="candidate" class="form-select" required>
+                        <option value="">Select a candidate...</option>
+                        <option value="1">Candidate A</option>
+                        <option value="2">Candidate B</option>
+                        <option value="3">Candidate C</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Submit Vote</button>
+            </form>
+        </div>
+
+        <!-- Results Display -->
+        <div class="results-card p-4">
+            <h2 class="text-center mb-4">Live Voting Results</h2>
+            <div id="resultsContainer">
+                Loading results...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const candidates = {
+            1: 'Candidate A',
+            2: 'Candidate B',
+            3: 'Candidate C'
+        };
+
+        // Function to update the results
+        async function updateResults() {
+            try {
+                const response = await fetch('http://localhost/Online-voting-system/backend/get_results.php');
+                const data = await response.json();
+                console.log(data);
+                console.log(data.results, data.success);
+                // For demo purposes, using mock data if fetch fails
+                const results = data.success ? data.results : [
+                    { id: 1, name: "Candidate A", votes: 145, color: "#4CAF50" },
+                    { id: 2, name: "Candidate B", votes: 120, color: "#2196F3" },
+                    { id: 3, name: "Candidate C", votes: 98, color: "#9C27B0" }
+                ];
+
+                const totalVotes = results.reduce((sum, candidate) => sum + candidate.votes, 0);
+                
+                const resultsHTML = results.map(candidate => {
+                    const percentage = ((candidate.votes / totalVotes) * 100).toFixed(1);
+                    return `
+                        <div class="candidate-info" style="border-left-color: ${candidate.color}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h3 class="m-0">${candidate.name}</h3>
+                                <span class="votes-badge badge bg-primary">${candidate.votes} votes</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     role="progressbar" 
+                                     style="width: ${percentage}%; background-color: ${candidate.color}" 
+                                     aria-valuenow="${percentage}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">${percentage}% of total votes</small>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('resultsContainer').innerHTML = resultsHTML;
+            } catch (error) {
+                console.error('Error fetching results:', error);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('candidateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const candidate = document.getElementById('candidate');
+            const username = localStorage.getItem('username');
+            
+            if (!username) {
+                alert('Please log in first');
+                return;
+            }
+
+            const data = {
+                username: username,
+                candidate_name: candidates[candidate.value],
+                candidate: candidate.value
+            };
+
+            try {
+                const response = await fetch('http://localhost/Online-voting-system/backend/vote.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Vote registered successfully!');
+                    updateResults(); // Update results after successful vote
+                } else {
+                    alert(result.message || 'Voting failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again later.');
+            }
+        });
+
+        // Update results immediately and then every 30 seconds
+        updateResults();
+        setInterval(updateResults, 30000);
+    </script>
+</body>
+</html>
