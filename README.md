@@ -54,7 +54,7 @@ A web-based voting system that allows users to securely cast votes for candidate
 
 2)Run the index.html file in the frontend directory with your browser.
 
-3)Use the following credentials to test:
+3)Use the following credentials to test(note that each user can only vote once!):
 
 a)username => 'user1' password => 'pass123'
 
