@@ -66,9 +66,5 @@ d)username => 'user4' 'password' => 'pass123'
 
 e)username => 'user5' 'password' => 'pass123'
 
-# Demonstration Video:
-
-https://drive.google.com/file/d/1frHeDQoYHUR4ZoawvRNl0Bbl7yM42VuE/view?usp=sharing
-
 
 
